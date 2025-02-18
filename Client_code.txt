@@ -1,0 +1,90 @@
+package javaa;
+import java.awt.Button;
+import java.awt.Frame;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.*;
+
+class chatappl extends Frame implements ActionListener, Runnable {
+    TextField t1;
+    TextArea t2;
+    Button b;
+    Frame f;
+    Socket s1;
+    DataInputStream d1;
+    DataOutputStream d2;
+    Thread t;
+
+    chatappl() { 
+        f = new Frame("Chat Application Client");
+        t1 = new TextField();
+        t1.setBounds(100, 100, 300, 100);
+        t2 = new TextArea();
+        t2.setBounds(400, 100, 300, 100);
+        b = new Button("Send");
+        b.setBounds(300, 300, 50, 50);
+
+        try {
+            s1 = new Socket("localhost", 12000);
+            System.out.println("Connected to server.");
+            d1 = new DataInputStream(s1.getInputStream());
+            d2 = new DataOutputStream(s1.getOutputStream());
+        } catch(Exception e) {
+            System.out.println("Error in client socket connection: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        b.addActionListener(this);
+        f.add(t1);
+        f.add(t2);
+        f.add(b);
+
+        t = new Thread(this);
+        t.setDaemon(true);
+        t.start();
+
+        f.setLayout(null);
+        f.setSize(500, 500);
+        f.setVisible(true);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        String msg1 = t1.getText();
+        try {
+            if (d2 != null) {
+                d2.writeUTF(msg1);
+                d2.flush();
+            }
+        } catch (Exception e1) {
+            System.out.println("Error sending message from client: " + e1.getMessage());
+            e1.printStackTrace();
+        }
+        t2.append("CLIENT: " + msg1 + "\n");
+        t1.setText(""); 
+    }
+
+    public void run() {
+        while (true) {
+            try {
+                if (d1 != null) {
+                    String msg = d1.readUTF();
+                    t2.append("SERVER: " + msg + "\n");
+                }
+            } catch (Exception e) {
+                System.out.println("Error receiving message on client: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+public class a {
+    public static void main(String[] args) {
+        new chatappl();
+    }
+}
+
